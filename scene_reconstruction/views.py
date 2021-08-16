@@ -9,12 +9,17 @@ import json
 import cv2
 import os
 from PIL import Image
+from simple_3dviz import Mesh
+from simple_3dviz.window import show
+from simple_3dviz.utils import render
+from django.http import FileResponse
+from django.http import HttpResponse
+
 
 @csrf_exempt
 def reconstruct(request):
-    # Inicializa o retorno da requisição
+  # Inicializa o retorno da requisição
   data = {"success": False}
-
   # Checa se a requisição é um POST
   if request.method == "POST":
 
@@ -78,10 +83,17 @@ def reconstruct(request):
     output_file = 'reconstructed-caixa-02.ply'#Generate point cloud 
     print ("\n Creating the output file... \n")
     create_output(output_points, output_colors, output_file)
-    #data["points"] = points
-
+    #pymesh.save_mesh("3d_model.obj", output_points)
+    #data["points"] = pointss
+    
     data["success"] = True
-  return JsonResponse(data)
+  file_path =  os.path.abspath(os.getcwd()) + '\\reconstructed-caixa-02.ply'
+  FilePointer = open(file_path,"r")
+  response = HttpResponse(FilePointer,content_type='application/msword')
+  response['Content-Disposition'] = 'attachment; filename=NameOfFile'
+  
+
+  return response
  
 def getCalibrationData():
   os.chdir(r'./scene_reconstruction/data')
@@ -107,8 +119,28 @@ def reconstruct3dImage(disparity, img_1_downsampled):
   #output_file = 'reconstructed-caixa-02.ply'#Generate point cloud 
   #print ("\n Creating the output file... \n")
   #create_output(output_points, output_colors, output_file)
+  
+  
+
+
   return points_3D
 
+def re():
+    t = np.linspace(0, 4 * np.pi, 20)
+    x = np.sin(2 * t)
+    y = np.cos(t)
+    z = np.cos(2 * t)
+    sizes = (2 + np.sin(t)) * 0.125
+    centers = np.stack([x, y, z]).reshape(3, -1).T
+    cmap = plt.cm.copper
+    colors = cmap(np.random.choice(np.arange(500), centers.shape[0]))
+    s = Spherecloud(centers=centers, sizes=sizes, colors=colors)
+
+    from simple_3dviz import Mesh
+    m = Mesh.from_file("models/baby_yoda.stl", color=(0.1, 0.8, 0.1))
+    m.to_unit_cube()
+    show([s, m], camera_position=(-2.8, -2.8, 0.1), size=(512, 512))
+    
 def create_output(vertices, colors, filename):
 	colors = colors.reshape(-1,3)
 	vertices = np.hstack([vertices.reshape(-1,3),colors])
